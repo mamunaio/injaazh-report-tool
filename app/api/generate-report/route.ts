@@ -124,6 +124,57 @@ PAGE BREAK HINTS (CRITICAL — keep PDF flowing without empty gaps):
 - Headings should have  page-break-after: avoid  so they don't get orphaned at the bottom of a page.
 - The whole report should read like a continuous magazine layout, not a slideshow with one section per page.
 
+═══════════════════════════════════════════════════════════════════
+RESPONSIVE PAGE-FLOW RULES (CRITICAL — fixes empty gaps, orphans, splits)
+═══════════════════════════════════════════════════════════════════
+
+1. PANEL HEADER GROUPING
+Every major panel/section MUST start with a wrapper that keeps the eyebrow + heading + intro paragraph together as ONE unbreakable unit. Otherwise the eyebrow gets stuck at the bottom of a page while the heading + content jumps to the next page (leaves a half-empty page).
+
+Use this pattern for EVERY section:
+  <section class="panel">
+    <div class="panel-header">
+      <p class="eyebrow">URGENT ATTENTION REQUIRED</p>
+      <h2>Critical Issues</h2>
+      <p class="intro">Short 1-2 sentence intro...</p>
+    </div>
+    <!-- the rest of the panel content goes after the panel-header -->
+  </section>
+
+2. METRIC CARDS — STACKED VERTICAL LAYOUT (no horizontal cramming)
+Each metric card MUST use a simple vertical stack (display:flex; flex-direction:column). NEVER put the score + unit + status-label side-by-side in a row that can wrap awkwardly. Layout from top to bottom inside each card:
+  • Tiny label (12-13px, muted): "Largest Contentful Paint (Desktop)"
+  • Big numeric score on its own line (32-44px, bold gold): "3.6s"
+  • Status pill on its own line below ("Needs improvement", "Poor", "Good")
+  • All three vertically stacked with margin between, never inline.
+
+3. CARD GRIDS — ROW-AWARE
+For metric grids, opportunity grids, etc., do NOT use auto-fit/auto-fill that creates uneven last-row counts. Use fixed grid-template-columns (e.g. repeat(2, 1fr) or repeat(3, 1fr)) so the rows are predictable. Each card in the grid must have:
+  style="break-inside: avoid; page-break-inside: avoid;"
+Do NOT put break-inside on the grid container itself — only on each card.
+
+4. ROADMAP ITEMS — FULL WIDTH, VERTICAL FLOW
+Each month card in the 5-month roadmap should be FULL WIDTH (not split into a label+value 2-column layout). Inside each month:
+  • Month badge + month title in one row at top (e.g. "M1 · Foundation & Quick Wins")
+  • Below: a simple <ul> with bullet points for milestones
+  • Each milestone bullet is a single line: "<strong>Title:</strong> short description"
+  • Do NOT use a 2-column grid where the label is left and description is right — when the description wraps, the next item starts on a new column row creating gaps.
+- Wrap each whole month card with style="break-inside: avoid; page-break-inside: avoid;"
+
+5. TABLES — RESPONSIVE & PAGE-AWARE
+Use proper <thead> and <tbody>:
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Current</th><th>Target</th><th>Uplift</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>...</td>...</tr>
+    </tbody>
+  </table>
+- Apply  width: 100%; table-layout: fixed; border-collapse: collapse;  on the table.
+- Cell padding: 12-14px. Font: 13px. Use word-break: break-word; on cells so long values wrap inside the cell instead of overflowing.
+- Do NOT manually create grid-based "tables" with divs — use real <table> markup. The browser handles repeating headers and row breaking properly only on real tables.
+
 CONSTRAINTS:
 - No external images, fonts (the host document loads Playfair + Outfit), scripts, or stylesheets.
 - Aim for ~1000–1600 lines of polished, production-quality FLAT HTML+CSS. Visual richness comes from typography, color, and layout — NOT from effects.
@@ -453,6 +504,18 @@ function buildDocument(fragment: string): string {
       page-break-after: avoid;
       break-after: avoid;
     }
+    /* Eyebrow labels (uppercase tracking) must stick with the heading
+       that follows — otherwise eyebrow lands at page bottom and the
+       heading + content jumps to the next page leaving an empty gap. */
+    .injaazh-report .eyebrow,
+    .injaazh-report [class*="eyebrow"],
+    .injaazh-report .panel-header,
+    .injaazh-report [class*="panel-header"] {
+      page-break-after: avoid;
+      break-after: avoid;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
     /* Small atomic units: don't split mid-element */
     .injaazh-report tr,
     .injaazh-report li,
@@ -461,6 +524,32 @@ function buildDocument(fragment: string): string {
     .injaazh-report svg {
       page-break-inside: avoid;
       break-inside: avoid;
+    }
+    /* Repeat table headers on every printed page so split tables stay
+       readable across page breaks */
+    .injaazh-report thead {
+      display: table-header-group;
+    }
+    .injaazh-report tfoot {
+      display: table-footer-group;
+    }
+    /* Tables: predictable, page-friendly layout */
+    .injaazh-report table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .injaazh-report td,
+    .injaazh-report th {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    /* Orphans / widows: avoid leaving 1 line of a paragraph alone at top
+       or bottom of a page */
+    .injaazh-report p,
+    .injaazh-report li {
+      orphans: 3;
+      widows: 3;
     }
     .injaazh-report img,
     .injaazh-report svg {
