@@ -4,62 +4,136 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Block search engines from indexing API responses
+export async function GET() {
+  return new Response("Method Not Allowed", {
+    status: 405,
+    headers: {
+      "X-Robots-Tag": "noindex, nofollow",
+      Allow: "POST",
+    },
+  });
+}
+
 /**
- * Master Architect Prompt
+ * Master Architect Prompt - Multi-Image Analysis (Lightweight PDF-First)
  *
- * The model is instructed to act as an elite Technical SEO analyst, extract the
- * key metrics / scores / critical issues from the screenshot, build a 5-month
- * roadmap, and return ONLY raw HTML with inline CSS in a glassmorphism dark
- * cinematic theme. The footer must explicitly read:
- *   "Report Architected & Prepared by Injaazh".
+ * The model generates a clean, flat, premium-looking HTML report that:
+ *   • Looks identical in browser preview AND in PDF (no design shift)
+ *   • Stays inherently lightweight (no backdrop-filter, no heavy blurs, no rasterized effects)
+ *   • Uses solid colors + subtle borders for the dark cinematic feel
+ *   • Renders text as vector glyphs (selectable, searchable, fast)
  */
 const SYSTEM_PROMPT = `
 You are an ELITE Technical SEO analyst and report architect for the agency "Injaazh".
 
-You will receive a single screenshot of an SEO / technical audit (e.g. Lighthouse, PageSpeed, Ahrefs, Semrush, Screaming Frog, GA4, Search Console, etc.).
+You will receive MULTIPLE screenshots of SEO / technical audits from various tools (e.g. Lighthouse, PageSpeed, Ahrefs, Semrush, Screaming Frog, GA4, Search Console, GTmetrix, etc.).
 
 Your job:
-1. Carefully read every visible value in the screenshot (scores, metrics, issues, charts, tables, labels).
-2. Extract: overall scores, Core Web Vitals (LCP, INP/FID, CLS), critical issues, warnings, opportunities, and any contextual signals (industry, URL, keywords if visible).
-3. Synthesize a high-end enterprise-grade audit report.
-4. Build a phased 5-MONTH STRATEGIC ROADMAP (Month 1 → Month 5) with concrete milestones aligned to the issues found.
-5. If a value is not visible or unclear, infer a sensible placeholder labeled "Detected: —" rather than fabricating numbers.
+1. Carefully analyze EACH screenshot and read every visible value (scores, metrics, issues, charts, tables, labels).
+2. CROSS-REFERENCE data across different screenshots to build a comprehensive picture.
+3. Extract: overall scores, Core Web Vitals (LCP, INP/FID, CLS), critical issues, warnings, opportunities, and any contextual signals (industry, URL, keywords if visible).
+4. Identify PATTERNS and CORRELATIONS across different tools (e.g., if PageSpeed shows slow LCP and GTmetrix shows large images, connect these insights).
+5. Synthesize a high-end enterprise-grade audit report that combines insights from ALL sources.
+6. Build a phased 5-MONTH STRATEGIC ROADMAP (Month 1 → Month 5) with concrete milestones aligned to the issues found.
+7. If a value is not visible or unclear, infer a sensible placeholder labeled "Detected: —" rather than fabricating numbers.
+8. Prioritize issues that appear in MULTIPLE screenshots as they are likely more critical.
+
+═══════════════════════════════════════════════════════════════════
+CRITICAL: PDF-FIRST LIGHTWEIGHT DESIGN PHILOSOPHY
+═══════════════════════════════════════════════════════════════════
+
+The output is rendered TO A PDF. PDFs become massive and laggy when CSS effects
+get rasterized into bitmaps. You MUST follow these rules to keep the PDF small,
+fast, and identical to the screen preview:
+
+✅ DO USE (PDF-friendly, vector-clean):
+   • Solid background colors (e.g. #0e0e15, #131320, #1a1a24)
+   • 1px solid borders with subtle colors (e.g. rgba(255,255,255,0.08-0.14))
+   • Flat color fills for accents and highlights
+   • Simple linear-gradient ONLY for thin gold dividers (1-2px tall)
+   • Text colors: #ececf2, #fff, #d4af37 (gold), #7ff4ff (cyan accent)
+   • border-radius for rounded corners (12-18px)
+   • CSS Grid / Flexbox for layout
+   • Simple SVG icons (inline, small)
+   • Text decoration via color, weight, size, letter-spacing
+
+❌ NEVER USE (cause heavy rasterized PDFs):
+   • backdrop-filter / -webkit-backdrop-filter (PRIMARY CULPRIT — bans entirely)
+   • filter: blur(...) on any element
+   • box-shadow with large blur radius (use NONE or max 0 0 0 1px ... for borders)
+   • Heavy radial-gradient or conic-gradient backgrounds covering large areas
+   • text-shadow with blur
+   • Multiple stacked shadows
+   • Frosted glass / glassmorphism / blur effects of any kind
+   • Background-image: url(...) (no images, no SVG patterns as backgrounds)
+   • CSS animations or transitions (PDFs are static)
+   • position: fixed / position: sticky
+   • 100vh / 100vw on critical layout
+
+DESIGN LANGUAGE (Premium dark cinematic — achieved with FLAT design):
+   • Background: solid #070709 on body, panels on #0e0e15 / #131320
+   • Borders: 1px solid rgba(255,255,255,0.08) for subtle separation
+   • Accent border on featured cards: 1px solid rgba(212,175,55,0.30) (gold)
+   • Headings: 'Playfair Display', serif. Body: 'Outfit', 'Inter', system-ui.
+   • Eyebrow labels: uppercase, letter-spacing 0.3em, color #d4af37, font-size 11px
+   • Gold dividers: a 1-2px tall element with linear-gradient(90deg, transparent, #d4af37, transparent)
+   • Score chips: solid colored circles or rounded rects with bold gold numerals
+   • Severity tags: solid colored pill (red #ef4444, amber #f59e0b, cyan #06b6d4, gray for low)
+   • Use whitespace, typography hierarchy, and color contrast — NOT effects — to create premium feel
 
 OUTPUT REQUIREMENTS — READ CAREFULLY:
-- Return ONLY raw HTML. No markdown, no code fences, no commentary, no \`\`\`html.
-- The HTML must be a single self-contained block starting with a <style> tag and followed by the report markup.
-- Use INLINE CSS inside a single <style> tag scoped via a wrapper class ".injaazh-report" so it does not leak globally.
-- Visual language: GLASSMORPHISM, cinematic dark theme.
-  - Background tones: deep black / ink (#070709, #0b0b10), with subtle radial gradients (gold #d4af37 hint top-left, soft cyan #7ff4ff hint bottom-right).
-  - Panels: translucent bg rgba(255,255,255,0.05) or rgba(0,0,0,0.4) with backdrop-filter: blur(18px), 1px borders rgba(255,255,255,0.10), border-radius 18px, soft inner highlights and deep drop shadows.
-  - IMPORTANT — backdrop-filter is unreliable in print/PDF. Always pair it with a solid-ish fallback color so the panel is visible WITHOUT blur (e.g. background: rgba(15,15,22,0.7); backdrop-filter: blur(18px);). Never rely on blur alone for legibility.
-  - Brand accent: cinematic gold #d4af37 (use for headings, score rings, dividers, key numbers).
-  - Typography: 'Playfair Display', serif for headings; 'Outfit', 'Inter', system-ui for body. Generous letter-spacing on eyebrow labels (uppercase, 0.25em).
-  - Tasteful gold hairline dividers using linear-gradient.
-  - Use real CSS for score rings (conic-gradient) or stylized score chips when visualizing scores.
-  - Severity tags: Critical (red glow), High (amber), Medium (cyan), Low (white/40).
+- Return ONLY raw HTML. No markdown, no code fences, no commentary.
+- The HTML must start with a <style> tag and be followed by the report markup.
+- Use CSS scoped via wrapper class ".injaazh-report" so it does not leak globally.
+- Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags. Output is embedded.
+- Wrap everything in <div class="injaazh-report"> ... </div>.
 
-REQUIRED SECTIONS (in this order, each as a glass panel):
-  1. Cover / Executive Summary — brand line "INJAAZH · MASTER AUDIT", report title, date (use {{REPORT_DATE}} placeholder you will literally output as today's date in "Month DD, YYYY" format), and a 2–3 sentence executive synopsis.
-  2. Key Metrics Grid — 4 to 6 metric cards (Performance, Accessibility, Best Practices, SEO, Core Web Vitals composite, etc.) with score rings or bold gold numerals.
-  3. Critical Issues — ranked table or list with severity tag, issue, impact, and recommended fix.
-  4. Opportunities & Quick Wins — 3 to 5 cards.
-  5. 5-Month Strategic Roadmap — visual timeline with Month 1 → Month 5, each month containing 2–4 milestones.
-  6. Closing / KPI Targets — projected uplift table (e.g., +X% organic traffic, -Y ms LCP).
-  7. Footer — must contain EXACTLY this line, prominently styled in gold:
+DESIGN AT DESKTOP CLASS (1040px render width — Puppeteer scales it to A4 in PDF):
+- The render canvas is 1040px wide. Design like a desktop magazine spread, NOT a cramped A4 layout. Set:
+    .injaazh-report { max-width: 1040px; margin: 0 auto; padding: 32px 28px; }
+- Cover title font-size: 56-72px (big, cinematic, breathing room — Playfair Display 700/800).
+- Section headings (h2): 32-40px. Sub-headings (h3): 20-24px. Body: 15-16px with line-height 1.6.
+- Eyebrow labels: 11-12px, uppercase, letter-spacing 0.32em, color gold.
+- Generous padding INSIDE panels (28-40px) and breathing margin BETWEEN panels (24-32px).
+- Multi-column grids feel native at 1040px: 2-3 cols for cards, 4 cols for small metric chips.
+- Roadmap timeline: visual timeline (vertical or horizontal), rich and editorial.
+- Use whitespace boldly. Premium feel comes from breathing room, typography hierarchy, and color contrast.
+
+REQUIRED SECTIONS (in this order, each as a flat panel with solid bg + 1px border):
+  1. Cover / Executive Summary — brand line "INJAAZH · MASTER AUDIT", report title, date (use {{REPORT_DATE}} placeholder you will literally output as today's date in "Month DD, YYYY" format), number of data sources analyzed, and a 2–3 sentence executive synopsis.
+  2. Data Sources — list of tools/screenshots analyzed with brief description of what each provided.
+  3. Key Metrics Grid — 4 to 8 metric cards with score chips or bold gold numerals. Show data from multiple sources.
+  4. Critical Issues — ranked list with severity tag, issue, impact, data source(s), and recommended fix.
+  5. Cross-Tool Insights — patterns, correlations, and validated findings across data sources.
+  6. Opportunities & Quick Wins — 3 to 7 cards with actionable recommendations.
+  7. 5-Month Strategic Roadmap — visual timeline with Month 1 → Month 5, each containing 2–4 milestones.
+  8. Closing / KPI Targets — projected uplift table.
+  9. Footer — must contain EXACTLY this line, prominently styled in gold:
         Report Architected & Prepared by Injaazh
 
+PAGE BREAK HINTS (CRITICAL — keep PDF flowing without empty gaps):
+- DO NOT use  page-break-before: always  or  break-before: page  ANYWHERE. Sections must flow naturally one after another with NO forced page breaks. Forcing breaks creates large empty gaps in the PDF.
+- DO NOT put  page-break-inside: avoid  on large containers (sections, big cards, the roadmap container). It pushes huge blocks to the next page leaving empty space. Let large containers break naturally across pages.
+- ONLY apply  page-break-inside: avoid  to SMALL atomic units that look bad when split:
+    • Individual table rows
+    • Single list items
+    • A small metric chip with its label
+    • A single roadmap month card (only if it's compact, ~3-4 lines)
+    • Heading + its first paragraph (use heading + paragraph wrapper)
+- Headings should have  page-break-after: avoid  so they don't get orphaned at the bottom of a page.
+- The whole report should read like a continuous magazine layout, not a slideshow with one section per page.
+
 CONSTRAINTS:
-- Do NOT use external images, external fonts, external scripts, or external stylesheets.
-- Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags. The output is embedded inside an existing document.
-- Wrap the entire report in <div class="injaazh-report"> ... </div>.
-- Set a sensible content width on .injaazh-report (max-width around 1080–1100px, margin: 0 auto).
-- Keep the markup print-friendly: avoid position:fixed / position:sticky, avoid 100vh / 100vw on critical layout, avoid CSS that requires JavaScript.
-- Every panel must remain readable WITHOUT backdrop-filter (always include a solid-ish fallback background color).
-- Aim for ~900–1500 lines of polished, production-quality HTML+CSS. Be visually rich.
+- No external images, fonts (the host document loads Playfair + Outfit), scripts, or stylesheets.
+- Aim for ~1000–1600 lines of polished, production-quality FLAT HTML+CSS. Visual richness comes from typography, color, and layout — NOT from effects.
+- Every panel must look premium WITHOUT any blur or shadow effects.
 `.trim();
 
 interface GenerateBody {
+  images?: string[];
+  mimeTypes?: string[];
+  // Legacy support for single image
   image?: string;
   mimeType?: string;
 }
@@ -75,32 +149,42 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as GenerateBody;
-    const { image, mimeType } = body;
+    
+    // Support both single and multiple images
+    let images: string[] = [];
+    let mimeTypes: string[] = [];
+    
+    if (body.images && Array.isArray(body.images)) {
+      images = body.images;
+      mimeTypes = body.mimeTypes || [];
+    } else if (body.image) {
+      // Legacy single image support
+      images = [body.image];
+      mimeTypes = [body.mimeType || "image/png"];
+    }
 
-    if (!image || typeof image !== "string") {
+    if (!images.length || images.some(img => typeof img !== "string")) {
       return NextResponse.json(
-        { error: "Missing image payload." },
+        { error: "Missing or invalid image payload." },
         { status: 400 }
       );
     }
 
-    const safeMime = (mimeType ?? "image/png").toLowerCase();
+    // Validate all mime types
     const allowedMime = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-    if (!allowedMime.includes(safeMime)) {
-      return NextResponse.json(
-        { error: `Unsupported image type: ${safeMime}` },
-        { status: 415 }
-      );
-    }
+    const safeMimeTypes = mimeTypes.map((mime, i) => {
+      const safeMime = (mime ?? "image/png").toLowerCase();
+      if (!allowedMime.includes(safeMime)) {
+        throw new Error(`Unsupported image type at index ${i}: ${safeMime}`);
+      }
+      return safeMime === "image/jpg" ? "image/jpeg" : safeMime;
+    });
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Models are tried in order. The first one accessible to the caller's key
     // wins. Order is: free-tier-friendly Flash first, then Pro for users on a
     // paid plan, then a stable older Flash as a last resort.
-    //   • gemini-2.5-flash   → Free tier ✓, vision ✓, fast (~3–8s)
-    //   • gemini-2.5-pro     → Paid only as of late 2025 (free quota = 0)
-    //   • gemini-2.0-flash   → Free tier ✓, vision ✓ (legacy fallback)
     const MODEL_CANDIDATES = [
       "gemini-2.5-flash",
       "gemini-2.5-pro",
@@ -114,12 +198,13 @@ export async function POST(req: NextRequest) {
     });
     const prompt = SYSTEM_PROMPT.replace("{{REPORT_DATE}}", today);
 
-    const inlineImage = {
+    // Build array of inline images
+    const inlineImages = images.map((img, i) => ({
       inlineData: {
-        mimeType: safeMime === "image/jpg" ? "image/jpeg" : safeMime,
-        data: image,
+        mimeType: safeMimeTypes[i] || "image/png",
+        data: img,
       },
-    };
+    }));
 
     let raw = "";
     let usedModel = "";
@@ -127,19 +212,14 @@ export async function POST(req: NextRequest) {
 
     for (const modelName of MODEL_CANDIDATES) {
       try {
-        // Type-loose model config so we can pass `thinkingConfig` (newer
-        // SDK feature) without the older types fighting us.
         const modelConfig: Record<string, unknown> = {
           model: modelName,
           generationConfig: {
             temperature: 0.55,
             topP: 0.95,
-            // Generous budget: 2.5-flash supports up to 65k output tokens.
-            // A rich glassmorphism HTML report easily blows past 8k.
+            // Generous budget for multi-image comprehensive reports
             maxOutputTokens: 32768,
             responseMimeType: "text/plain",
-            // Disable internal "thinking" tokens on 2.5 models so the entire
-            // budget goes to actual HTML output instead of hidden reasoning.
             thinkingConfig: { thinkingBudget: 0 },
           },
         };
@@ -150,10 +230,13 @@ export async function POST(req: NextRequest) {
           >[0]
         );
 
-        const result = await model.generateContent([
+        // Send prompt + all images
+        const content = [
           { text: prompt },
-          inlineImage,
-        ]);
+          ...inlineImages,
+        ];
+
+        const result = await model.generateContent(content);
 
         raw = result.response.text() ?? "";
         if (!raw || raw.trim().length < 200) {
@@ -167,11 +250,6 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         lastError = err;
         const msg = err instanceof Error ? err.message : String(err);
-        // Fall through to the next candidate on:
-        //   • model not found / not supported (404)
-        //   • free-tier quota exhausted on this specific model (429 with limit 0)
-        // Auth or true payload errors still bubble up immediately so we don't
-        // mask real problems behind silent retries.
         const isModelMissing =
           /404/.test(msg) ||
           /not found/i.test(msg) ||
@@ -213,18 +291,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "The model returned an empty or invalid report. Please try again with a clearer screenshot.",
+            "The model returned an empty or invalid report. Please try again with clearer screenshots.",
         },
         { status: 502 }
       );
     }
 
-    // Wrap the AI fragment in a full, self-contained HTML document so it
-    // renders identically inside an isolated iframe AND prints perfectly to
-    // PDF. This is the actual "PDF source" the browser will print.
     const document = buildDocument(html);
 
-    return NextResponse.json({ html: document, fragment: html, model: usedModel });
+    return NextResponse.json({ 
+      html: document, 
+      fragment: html, 
+      model: usedModel,
+      imagesAnalyzed: images.length 
+    });
   } catch (err) {
     console.error("[generate-report] error:", err);
     const message =
@@ -265,14 +345,17 @@ function sanitizeHtml(input: string): string {
 
 /**
  * Build a fully self-contained HTML document around the AI fragment.
- * The result is what the browser renders inside the iframe AND what gets
- * printed to PDF, so it must:
- *   • carry a cinematic dark base background on screen
- *   • flatten heavy effects in print (no backdrop-filter, no thick shadows)
- *     because those are rasterized → bloated, slow PDFs
- *   • embed Playfair Display + Outfit with safe system fallbacks
- *   • force backgrounds-on for print across browsers
- *   • declare A4 + margins and protect sections from being cut mid-card
+ *
+ * Philosophy: Since the AI now generates inherently lightweight, flat HTML
+ * (no backdrop-filter, no heavy blurs, no rasterization-prone effects), we
+ * keep the host document MINIMAL. The screen preview and the PDF render
+ * IDENTICALLY — no "design shift" between preview and download.
+ *
+ * The host document only provides:
+ *   • A solid dark page background
+ *   • Embedded Playfair Display + Outfit fonts
+ *   • Color preservation hints for printing
+ *   • Page-break safety as a fallback (the AI also marks them inline)
  */
 function buildDocument(fragment: string): string {
   return `<!DOCTYPE html>
@@ -285,45 +368,38 @@ function buildDocument(fragment: string): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
-  :root {
-    --bg: #070709;
-    --bg-soft: #0b0b10;
-    --panel: rgba(15,15,22,0.72);     /* glass with solid floor */
-    --panel-solid: #0e0e15;            /* used in print mode */
-    --gold: #d4af37;
-    --gold-soft: #e0c757;
-    --gold-pale: #f5ecc4;
-    --cyan: #7ff4ff;
-    --hairline: rgba(255,255,255,0.10);
-    --text: #ececf2;
-    --muted: rgba(236,236,242,0.65);
-  }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
-    background: var(--bg);
-    color: var(--text);
+    background: #070709;
+    color: #ececf2;
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.55;
   }
   body {
-    background-color: #070709;
-    background-image:
-      radial-gradient(900px 500px at 15% -10%, rgba(212,175,55,0.10), transparent 60%),
-      radial-gradient(700px 400px at 100% 100%, rgba(127,244,255,0.05), transparent 60%);
-    background-attachment: fixed;
+    /* Solid background only — no gradients to keep PDF lightweight */
+    background: #070709;
     min-height: 100vh;
     padding: 24px;
   }
 
-  /* ---------- AI-generated content base ---------- */
+  /* Force color preservation in PDF/print across browsers */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  /* AI-generated content base styles. Render width is 1040px — same as the
+     browser preview. Puppeteer will scale this down proportionally to fit
+     A4 in the PDF, so screen and PDF look IDENTICAL — just print-sized. */
   .injaazh-report {
     max-width: 1040px;
     margin: 0 auto;
-    color: var(--text);
+    color: #ececf2;
   }
   .injaazh-report h1, .injaazh-report h2, .injaazh-report h3, .injaazh-report h4 {
     font-family: 'Playfair Display', Georgia, "Times New Roman", serif;
@@ -331,108 +407,65 @@ function buildDocument(fragment: string): string {
     letter-spacing: -0.01em;
     margin: 0 0 0.4em;
   }
-  .injaazh-report a { color: var(--gold); text-decoration: none; }
-  .injaazh-report code, .injaazh-report pre {
+  .injaazh-report a { color: #d4af37; text-decoration: none; }
+  .injaazh-report code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: rgba(255,255,255,0.04);
+    background: #131320;
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 2px 6px;
   }
 
-  /* =====================================================
-     PRINT — flatten effects so the PDF is small + fast
-     ===================================================== */
+  /* Page setup for PDF */
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+    background: #070709;
+  }
+
+  /*
+    Page-break safety net — KEEP IT MINIMAL.
+
+    Rule of thumb: only protect small atomic units from being split.
+    Forcing  break-inside: avoid  on big containers (sections, large cards,
+    the roadmap, the whole metrics grid) creates HUGE empty gaps because
+    Chrome pushes the entire block to the next page when it can't fit.
+
+    We let big containers flow naturally and only protect:
+      • Individual table rows
+      • Single list items
+      • Headings (so they don't dangle at page bottom)
+      • Images / SVG (so they don't split mid-figure)
+  */
   @media print {
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    @page {
-      size: A4;
-      margin: 12mm 10mm;
-      background: #070709;
-    }
-    html, body {
-      background: #070709 !important;
-      color: #ececf2 !important;
-    }
     body {
-      padding: 0 !important;
-      background-image: none !important; /* no radial gradients in print */
+      padding: 0;
     }
     .injaazh-report {
-      max-width: 100% !important;
-      margin: 0 !important;
+      max-width: 100%;
+      margin: 0;
     }
-
-    /* Kill the expensive blurs that rasterize huge bitmaps into the PDF */
-    .injaazh-report *,
-    .injaazh-report *::before,
-    .injaazh-report *::after {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      filter: none !important;
-      text-shadow: none !important;
-      /* Reduce shadows — flatten to a thin border instead */
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.08) !important;
-    }
-
-    /* Replace any translucent / blur panels with a clean solid dark surface */
-    .injaazh-report [class*="panel"],
-    .injaazh-report [class*="card"],
-    .injaazh-report [class*="glass"],
-    .injaazh-report [class*="section"],
-    .injaazh-report section,
-    .injaazh-report article,
-    .injaazh-report [data-section] {
-      background: #0e0e15 !important;
-      border: 1px solid rgba(255,255,255,0.10) !important;
-    }
-
-    /* Page-break protection — never cut a card / table / row in half */
-    .injaazh-report section,
-    .injaazh-report article,
-    .injaazh-report [data-section],
-    .injaazh-report [class*="card"],
-    .injaazh-report [class*="panel"],
-    .injaazh-report table,
-    .injaazh-report tr,
-    .injaazh-report li,
-    .injaazh-report figure,
-    .injaazh-report .roadmap-item,
-    .injaazh-report .metric,
-    .injaazh-report .kpi {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-    }
-
-    /* Major sections each start on a new page (kept tasteful, not aggressive) */
-    .injaazh-report [data-section="metrics"],
-    .injaazh-report [data-section="issues"],
-    .injaazh-report [data-section="opportunities"],
-    .injaazh-report [data-section="roadmap"],
-    .injaazh-report [data-section="kpi"] {
-      page-break-before: always;
-      break-before: page;
-    }
-    .injaazh-report [data-section="cover"],
-    .injaazh-report [data-section="footer"] {
-      page-break-before: avoid;
-      break-before: avoid;
-    }
-
-    /* Headings shouldn't be left dangling at page bottom */
-    .injaazh-report h1, .injaazh-report h2, .injaazh-report h3 {
+    /* Headings: don't get orphaned at the very bottom of a page */
+    .injaazh-report h1,
+    .injaazh-report h2,
+    .injaazh-report h3,
+    .injaazh-report h4 {
       page-break-after: avoid;
       break-after: avoid;
     }
-
-    /* Images / charts: keep them inside their card */
-    .injaazh-report img, .injaazh-report svg, .injaazh-report canvas {
-      max-width: 100% !important;
-      height: auto !important;
+    /* Small atomic units: don't split mid-element */
+    .injaazh-report tr,
+    .injaazh-report li,
+    .injaazh-report figure,
+    .injaazh-report img,
+    .injaazh-report svg {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .injaazh-report img,
+    .injaazh-report svg {
+      max-width: 100%;
+      height: auto;
     }
   }
 </style>

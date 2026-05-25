@@ -36,8 +36,8 @@ const ANALYSIS_PHASES = [
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("idle");
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [reportHtml, setReportHtml] = useState<string>("");
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [downloading, setDownloading] = useState(false);
@@ -46,19 +46,31 @@ export default function Home() {
 
   const onDrop = useCallback((accepted: File[], rejections: unknown[]) => {
     if (rejections && (rejections as { errors: { code: string }[] }[]).length) {
-      toast.error("Please upload a valid image (PNG, JPG, or WebP, ≤ 10MB).");
+      toast.error("Please upload valid images (PNG, JPG, or WebP, ≤ 10MB each).");
       return;
     }
-    const f = accepted[0];
-    if (!f) return;
+    
+    if (!accepted.length) return;
 
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    const url = URL.createObjectURL(f);
-    setFile(f);
-    setPreviewUrl(url);
+    // Check total file limit (max 10 images)
+    const currentCount = files.length;
+    const newCount = currentCount + accepted.length;
+    
+    if (newCount > 10) {
+      toast.error(`Maximum 10 images allowed. You're trying to add ${accepted.length} more to ${currentCount} existing.`);
+      return;
+    }
+
+    // Create preview URLs for new files
+    const newUrls = accepted.map(f => URL.createObjectURL(f));
+    
+    setFiles(prev => [...prev, ...accepted]);
+    setPreviewUrls(prev => [...prev, ...newUrls]);
     setStage("preview");
-    toast.success("Screenshot loaded. Ready to architect your report.");
-  }, [previewUrl]);
+    
+    const count = accepted.length;
+    toast.success(`${count} screenshot${count > 1 ? 's' : ''} loaded. Ready to architect your report.`);
+  }, [files]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
@@ -67,16 +79,19 @@ export default function Home() {
       "image/jpeg": [".jpg", ".jpeg"],
       "image/webp": [".webp"],
     },
-    multiple: false,
+    multiple: true,
     maxSize: 10 * 1024 * 1024,
-    noClick: true,
-    noKeyboard: true,
+    // Click anywhere on the dropzone box opens the file picker.
+    // Keyboard support is also enabled for accessibility.
+    noClick: false,
+    noKeyboard: false,
   });
 
   const reset = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setFile(null);
-    setPreviewUrl(null);
+    // Revoke all preview URLs to free memory
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setFiles([]);
+    setPreviewUrls([]);
     setReportHtml("");
     setStage("idle");
   };
@@ -112,17 +127,22 @@ export default function Home() {
     });
 
   const generate = async () => {
-    if (!file) return;
+    if (!files.length) return;
     setStage("analyzing");
     startPhraseRotation();
 
     try {
-      const { base64, mimeType } = await fileToBase64(file);
+      // Convert all files to base64
+      const imagePromises = files.map(file => fileToBase64(file));
+      const imageData = await Promise.all(imagePromises);
 
       const res = await fetch("/api/generate-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mimeType }),
+        body: JSON.stringify({ 
+          images: imageData.map(d => d.base64),
+          mimeTypes: imageData.map(d => d.mimeType)
+        }),
       });
 
       const data = await res.json();
@@ -194,8 +214,9 @@ export default function Home() {
     () =>
       [
         "uploader-shell glass relative overflow-hidden",
-        "p-10 md:p-14 transition-all duration-300",
-        "border-dashed",
+        // Tighter padding so the box doesn't feel oversized on screen
+        "p-6 md:p-8 transition-all duration-300",
+        "border-dashed cursor-pointer",
         isDragActive
           ? "border-gold-400/70 bg-gold-400/5 shadow-glow"
           : "border-white/10 hover:border-gold-400/40",
@@ -230,13 +251,21 @@ export default function Home() {
                     </div>
                   )}
 
-                  {(stage === "preview" || stage === "analyzing") && previewUrl && (
+                  {(stage === "preview" || stage === "analyzing") && previewUrls.length > 0 && (
                     <PreviewPanel
-                      previewUrl={previewUrl}
-                      fileName={file?.name ?? "screenshot"}
+                      files={files}
+                      previewUrls={previewUrls}
                       analyzing={stage === "analyzing"}
                       onReset={reset}
                       onGenerate={generate}
+                      onRemoveFile={(index) => {
+                        URL.revokeObjectURL(previewUrls[index]);
+                        setFiles(prev => prev.filter((_, i) => i !== index));
+                        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+                        if (files.length === 1) {
+                          setStage("idle");
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -367,7 +396,7 @@ function Hero() {
       >
         <span className="text-white/95">Architect a </span>
         <span className="text-gradient-gold">Master Report</span>
-        <span className="text-white/95"> from a single screenshot.</span>
+        <span className="text-white/95"> from multiple screenshots.</span>
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 14 }}
@@ -375,8 +404,9 @@ function Hero() {
         transition={{ delay: 0.28, duration: 0.7 }}
         className="mt-6 text-white/65 text-base md:text-lg max-w-2xl mx-auto"
       >
-        Drop an SEO or technical audit screenshot. Our cinematic AI engine extracts
-        metrics, exposes critical issues, and engineers a 5-month strategic roadmap
+        Drop multiple SEO or technical audit screenshots from different tools. 
+        Our cinematic AI engine extracts metrics, cross-references data, exposes 
+        critical issues, and engineers a comprehensive 5-month strategic roadmap 
         in glassmorphism style.
       </motion.p>
     </div>
@@ -406,40 +436,45 @@ function DropzoneVisual({
             rotate: isDragActive ? -2 : 0,
           }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mb-7"
+          className="relative mb-4"
         >
-          <div className="w-20 h-20 rounded-2xl border border-gold-400/40 bg-gradient-to-br from-gold-400/20 via-white/5 to-transparent flex items-center justify-center shadow-glass">
+          <div className="w-16 h-16 rounded-2xl border border-gold-400/40 bg-gradient-to-br from-gold-400/20 via-white/5 to-transparent flex items-center justify-center shadow-glass">
             <UploadIcon />
           </div>
           <div className="absolute -inset-2 rounded-2xl border border-gold-400/15 animate-gold-pulse" />
         </motion.div>
 
-        <h3 className="font-display text-2xl md:text-3xl">
+        <h3 className="font-display text-xl md:text-2xl">
           {isDragActive ? (
             <span className="text-gradient-gold">Release to ingest</span>
           ) : (
             <>
-              Drop your audit screenshot{" "}
+              Drop your audit screenshots{" "}
               <span className="text-gradient-gold">or browse</span>
             </>
           )}
         </h3>
-        <p className="mt-3 text-white/55 max-w-md">
-          PNG · JPG · WebP — up to 10MB. The cleaner the screenshot, the more
-          surgical the report.
+        <p className="mt-2 text-sm text-white/55 max-w-md">
+          PNG · JPG · WebP — up to 10MB each, max 10 images. Upload multiple 
+          screenshots from different tools for a comprehensive analysis.
         </p>
 
         <button
           type="button"
-          onClick={onClick}
-          className="btn-gold mt-8 group"
+          onClick={(e) => {
+            // Prevent the click from bubbling to the dropzone wrapper,
+            // which would otherwise open the file picker twice.
+            e.stopPropagation();
+            onClick();
+          }}
+          className="btn-gold mt-5 group"
           aria-label="Browse files"
         >
           <FolderIcon />
           <span>Browse Files</span>
         </button>
 
-        <p className="mt-5 text-[11px] uppercase tracking-[0.3em] text-white/35">
+        <p className="mt-4 text-[11px] uppercase tracking-[0.3em] text-white/35">
           Powered by Gemini Vision
         </p>
       </div>
@@ -448,78 +483,124 @@ function DropzoneVisual({
 }
 
 /* ============================================================
-   PREVIEW PANEL
+   PREVIEW PANEL - Multiple Images Grid
    ============================================================ */
 function PreviewPanel({
-  previewUrl,
-  fileName,
+  files,
+  previewUrls,
   analyzing,
   onReset,
   onGenerate,
+  onRemoveFile,
 }: {
-  previewUrl: string;
-  fileName: string;
+  files: File[];
+  previewUrls: string[];
   analyzing: boolean;
   onReset: () => void;
   onGenerate: () => void;
+  onRemoveFile: (index: number) => void;
 }) {
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+  const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+
   return (
-    <div className="grid md:grid-cols-[1.2fr_1fr] gap-6">
+    <div className="space-y-6">
+      {/* Image Grid */}
       <div className="glass overflow-hidden">
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gold-400/15 border border-gold-400/30 flex items-center justify-center">
               <ImageIcon />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm text-white/85 truncate max-w-[260px]">
-                {fileName}
+            <div>
+              <p className="text-sm text-white/85">
+                {files.length} screenshot{files.length > 1 ? 's' : ''} loaded
               </p>
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/40">
-                Source · Awaiting analysis
+                Total size: {totalSizeMB} MB
               </p>
             </div>
           </div>
           <button
             onClick={onReset}
             className="text-xs text-white/55 hover:text-white transition-colors"
+            disabled={analyzing}
           >
-            Replace
+            Clear All
           </button>
         </div>
-        <div className="relative bg-black/40">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Audit screenshot preview"
-            className="w-full max-h-[520px] object-contain"
-          />
-          {/* Subtle scan-line overlay while analyzing */}
-          <AnimatePresence>
-            {analyzing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 pointer-events-none"
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gold-400/[0.04] to-transparent" />
-                <motion.div
-                  initial={{ y: "-10%" }}
-                  animate={{ y: "110%" }}
-                  transition={{
-                    duration: 2.4,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-300 to-transparent shadow-[0_0_24px_rgba(212,175,55,0.6)]"
+
+        {/* Grid of thumbnails */}
+        <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {previewUrls.map((url, index) => (
+            <motion.div
+              key={url}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className="relative group"
+            >
+              <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-white/10 bg-black/40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`Screenshot ${index + 1}`}
+                  className="w-full h-full object-cover"
                 />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                
+                {/* Scan line overlay while analyzing */}
+                <AnimatePresence>
+                  {analyzing && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 pointer-events-none"
+                    >
+                      <motion.div
+                        initial={{ y: "-10%" }}
+                        animate={{ y: "110%" }}
+                        transition={{
+                          duration: 2.4,
+                          repeat: Infinity,
+                          ease: "linear",
+                          delay: index * 0.3,
+                        }}
+                        className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-300 to-transparent shadow-[0_0_24px_rgba(212,175,55,0.6)]"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Remove button */}
+                {!analyzing && (
+                  <button
+                    onClick={() => onRemoveFile(index)}
+                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/90 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove image"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Image number badge */}
+                <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/70 backdrop-blur-sm text-[10px] text-white/80 font-mono">
+                  #{index + 1}
+                </div>
+              </div>
+
+              {/* File name */}
+              <p className="mt-2 text-xs text-white/60 truncate">
+                {files[index].name}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </div>
 
+      {/* Action Panel */}
       <div className="glass p-7 flex flex-col">
         <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300/80">
           Step 02
@@ -528,13 +609,14 @@ function PreviewPanel({
           Architect the <span className="text-gradient-gold">Master Report</span>
         </h3>
         <p className="mt-3 text-sm text-white/60">
-          Our AI will extract scores, surface critical issues, and engineer a
-          5-month strategic roadmap. The output is delivered as a fully styled,
-          glassmorphism HTML report — ready for PDF.
+          Our AI will analyze all {files.length} screenshot{files.length > 1 ? 's' : ''}, extract scores, 
+          surface critical issues, and engineer a comprehensive 5-month strategic roadmap. 
+          The output is delivered as a fully styled, glassmorphism HTML report — ready for PDF.
         </p>
 
         <ul className="mt-6 space-y-3 text-sm">
-          <Bullet>Vision-grade metric extraction</Bullet>
+          <Bullet>Multi-source metric extraction</Bullet>
+          <Bullet>Cross-reference analysis across tools</Bullet>
           <Bullet>Severity-ranked critical issues</Bullet>
           <Bullet>Phased 5-month roadmap</Bullet>
           <Bullet>Print-ready cinematic styling</Bullet>

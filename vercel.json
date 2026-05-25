@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "app/api/export-pdf/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "app/api/generate-report/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
+}
