@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   // Keep these large native/binary deps OUT of the bundler so the serverless
   // function bundle stays small and Chromium loads correctly on Vercel.
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+  // Force the file tracer to include @sparticuz/chromium's binary folder
+  // in the serverless function bundle. Without this, Vercel's Lambda has
+  // no /var/task/node_modules/@sparticuz/chromium/bin and Chromium fails
+  // to launch with: "The input directory ... does not exist".
+  outputFileTracingIncludes: {
+    "/api/export-pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+      "./node_modules/@sparticuz/chromium/lib/**",
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
