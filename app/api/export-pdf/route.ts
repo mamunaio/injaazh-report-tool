@@ -196,17 +196,21 @@ export async function POST(req: NextRequest) {
       // spacing, same proportions, just shrunk like a magazine print.
       scale: 0.78,
       margin: {
-        top: "10mm",
+        top: "12mm",
         right: "10mm",
-        bottom: "12mm",
+        bottom: "16mm",
         left: "10mm",
       },
       displayHeaderFooter: true,
-      // Subtle gold-ish footer line: page number + brand
+      // Editorial gold-rule footer: brand on left, page count on right
       footerTemplate: `
-        <div style="width:100%; padding:0 10mm; font-family: 'Outfit','Inter',system-ui,sans-serif; font-size:8px; color:#9a9aa6; display:flex; justify-content:space-between; align-items:center;">
-          <span style="letter-spacing:0.2em; text-transform:uppercase;">Injaazh · Master Audit</span>
-          <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
+        <div style="width:100%; padding:0 12mm; font-family: 'Outfit','Inter',system-ui,sans-serif; font-size:8px; color:#9a9aa6; display:flex; justify-content:space-between; align-items:center; border-top:0.5px solid #d4af37;">
+          <span style="letter-spacing:0.32em; text-transform:uppercase; padding-top:6px;">
+            <span style="color:#d4af37;">Injaazh</span> &nbsp;·&nbsp; Master Audit Dossier
+          </span>
+          <span style="padding-top:6px; font-variant-numeric: tabular-nums;">
+            <span class="pageNumber"></span> &nbsp;/&nbsp; <span class="totalPages"></span>
+          </span>
         </div>`,
       headerTemplate: `<div></div>`,
     });

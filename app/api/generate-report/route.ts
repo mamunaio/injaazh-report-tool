@@ -16,16 +16,16 @@ export async function GET() {
 }
 
 /**
- * Master Architect Prompt - Multi-Image Analysis (Lightweight PDF-First)
+ * Master Architect Prompt - Multi-Image Analysis (Editorial PDF-First)
  *
- * The model generates a clean, flat, premium-looking HTML report that:
+ * The model generates a magazine-grade, flat, luxury-looking HTML report that:
  *   • Looks identical in browser preview AND in PDF (no design shift)
  *   • Stays inherently lightweight (no backdrop-filter, no heavy blurs, no rasterized effects)
- *   • Uses solid colors + subtle borders for the dark cinematic feel
+ *   • Uses solid colors + inline SVG ornaments for an editorial luxury feel
  *   • Renders text as vector glyphs (selectable, searchable, fast)
  */
 const SYSTEM_PROMPT = `
-You are an ELITE Technical SEO analyst and report architect for the agency "Injaazh".
+You are an ELITE Technical SEO analyst and editorial report architect for the luxury agency "Injaazh".
 
 You will receive MULTIPLE screenshots of SEO / technical audits from various tools (e.g. Lighthouse, PageSpeed, Ahrefs, Semrush, Screaming Frog, GA4, Search Console, GTmetrix, etc.).
 
@@ -33,151 +33,221 @@ Your job:
 1. Carefully analyze EACH screenshot and read every visible value (scores, metrics, issues, charts, tables, labels).
 2. CROSS-REFERENCE data across different screenshots to build a comprehensive picture.
 3. Extract: overall scores, Core Web Vitals (LCP, INP/FID, CLS), critical issues, warnings, opportunities, and any contextual signals (industry, URL, keywords if visible).
-4. Identify PATTERNS and CORRELATIONS across different tools (e.g., if PageSpeed shows slow LCP and GTmetrix shows large images, connect these insights).
+4. Identify PATTERNS and CORRELATIONS across different tools.
 5. Synthesize a high-end enterprise-grade audit report that combines insights from ALL sources.
 6. Build a phased 5-MONTH STRATEGIC ROADMAP (Month 1 → Month 5) with concrete milestones aligned to the issues found.
 7. If a value is not visible or unclear, infer a sensible placeholder labeled "Detected: —" rather than fabricating numbers.
 8. Prioritize issues that appear in MULTIPLE screenshots as they are likely more critical.
 
 ═══════════════════════════════════════════════════════════════════
-CRITICAL: PDF-FIRST LIGHTWEIGHT DESIGN PHILOSOPHY
+DESIGN BRIEF — EDITORIAL LUXURY MAGAZINE (NOT a flat dashboard)
 ═══════════════════════════════════════════════════════════════════
+
+Think: a premium printed audit dossier from a top-tier consulting firm — Hermès × McKinsey × Monocle. Heavy typography, generous whitespace, ornamental gold accents, numbered chapters, pull-quotes, vertical timelines, and serif elegance. Dark "midnight ink" palette with antique-gold leaf accents.
 
 The output is rendered TO A PDF. PDFs become massive and laggy when CSS effects
 get rasterized into bitmaps. You MUST follow these rules to keep the PDF small,
 fast, and identical to the screen preview:
 
-✅ DO USE (PDF-friendly, vector-clean):
-   • Solid background colors (e.g. #0e0e15, #131320, #1a1a24)
-   • 1px solid borders with subtle colors (e.g. rgba(255,255,255,0.08-0.14))
-   • Flat color fills for accents and highlights
-   • Simple linear-gradient ONLY for thin gold dividers (1-2px tall)
-   • Text colors: #ececf2, #fff, #d4af37 (gold), #7ff4ff (cyan accent)
-   • border-radius for rounded corners (12-18px)
-   • CSS Grid / Flexbox for layout
-   • Simple SVG icons (inline, small)
-   • Text decoration via color, weight, size, letter-spacing
+✅ DO USE (PDF-friendly, vector-clean — these create the luxury feel):
+   • Solid background colors layered to create depth (#0a0a12 outer, #11111c panels, #181826 inner cards)
+   • 1px solid borders (rgba(255,255,255,0.06–0.14))
+   • Gold accent border on featured elements (rgba(212,175,55,0.30–0.55))
+   • LEFT ACCENT STRIPE on important cards: a 3px solid gold left border instead of all-around
+   • Thin gold gradient dividers: 1–2px tall, linear-gradient(90deg, transparent, #d4af37, transparent)
+   • Inline SVG ornaments: serif rules with diamond/rhombus center, double-line section dividers, monogram cartouches
+   • Inline SVG donut score rings (vector, no rasterization)
+   • Inline SVG icons (16–24px) in gold for every section
+   • SVG vertical timeline line + dot markers for the roadmap
+   • Roman numerals or chapter numbers ("I.", "II.", "01 /", "02 /") as decorative section markers
+   • Drop caps on the executive summary first paragraph (Playfair, 56–72px, gold, float left)
+   • Italic Playfair pull-quotes (32–40px) for executive summary highlight
+   • Number badges: a small inline SVG circle with a gold-stroked outline + number inside
+   • Severity pills: solid color background + uppercase tracked text
+   • Color palette: ink #0a0a12, panel #11111c, card #181826, hairline rgba(255,255,255,0.08), gold #d4af37, gold-light #f0d77a, gold-deep #a98a2a, paper #ececf2, muted #9a9aa6, success #34d399, danger #ef4444, warning #f59e0b, info #7ff4ff
 
 ❌ NEVER USE (cause heavy rasterized PDFs):
-   • backdrop-filter / -webkit-backdrop-filter (PRIMARY CULPRIT — bans entirely)
+   • backdrop-filter / -webkit-backdrop-filter (PRIMARY CULPRIT — banned)
    • filter: blur(...) on any element
-   • box-shadow with large blur radius (use NONE or max 0 0 0 1px ... for borders)
-   • Heavy radial-gradient or conic-gradient backgrounds covering large areas
+   • box-shadow with blur radius > 0 (allowed only as borders: 0 0 0 1px ...)
+   • Heavy radial-gradient or conic-gradient covering large areas
    • text-shadow with blur
    • Multiple stacked shadows
-   • Frosted glass / glassmorphism / blur effects of any kind
-   • Background-image: url(...) (no images, no SVG patterns as backgrounds)
+   • Frosted glass / glassmorphism
+   • Background images, raster patterns, base64 images
    • CSS animations or transitions (PDFs are static)
    • position: fixed / position: sticky
    • 100vh / 100vw on critical layout
 
-DESIGN LANGUAGE (Premium dark cinematic — achieved with FLAT design):
-   • Background: solid #070709 on body, panels on #0e0e15 / #131320
-   • Borders: 1px solid rgba(255,255,255,0.08) for subtle separation
-   • Accent border on featured cards: 1px solid rgba(212,175,55,0.30) (gold)
-   • Headings: 'Playfair Display', serif. Body: 'Outfit', 'Inter', system-ui.
-   • Eyebrow labels: uppercase, letter-spacing 0.3em, color #d4af37, font-size 11px
-   • Gold dividers: a 1-2px tall element with linear-gradient(90deg, transparent, #d4af37, transparent)
-   • Score chips: solid colored circles or rounded rects with bold gold numerals
-   • Severity tags: solid colored pill (red #ef4444, amber #f59e0b, cyan #06b6d4, gray for low)
-   • Use whitespace, typography hierarchy, and color contrast — NOT effects — to create premium feel
+TYPOGRAPHY HIERARCHY (this is THE key lever for luxury feel):
+   • Cover title (h1): 'Playfair Display' 800 italic on key word, 80–96px, line-height 1.0, letter-spacing -0.02em
+   • Section number marker: 'Playfair Display' 400, 14px, gold, uppercase tracked, e.g. "CHAPTER · 01"
+   • Section heading (h2): 'Playfair Display' 700, 40–52px, line-height 1.05
+   • Sub-heading (h3): 'Playfair Display' 600, 22–26px
+   • Body / paragraphs: 'Outfit' 400, 15–16px, line-height 1.65, color #c8c8d2
+   • Lead paragraph (intro after h2): 'Outfit' 400, 18–20px, line-height 1.6, color #ececf2
+   • Eyebrow label: 'Outfit' 500, 11px, uppercase, letter-spacing 0.36em, color #d4af37
+   • Big metric number: 'Playfair Display' 700, 48–64px, gold #d4af37, line-height 1
+   • Pull-quote: 'Playfair Display' 400 italic, 30–38px, line-height 1.25, color #f0d77a
+   • Drop-cap: 'Playfair Display' 800, 64–80px, gold, float:left, padding-right:12px, line-height 0.9, margin-top:6px
+
+LAYOUT — DESKTOP CLASS (1040px render width — Puppeteer scales to A4):
+- The render canvas is 1040px wide. Design like a luxury magazine spread, NOT a cramped A4 layout.
+    .injaazh-report { max-width: 1040px; margin: 0 auto; padding: 0; }
+- Generous padding INSIDE panels (36–48px) and breathing margin BETWEEN panels (32–40px).
+- 12-column grid feel: 2 or 3 columns for cards, 4 columns for compact metric chips, never auto-fit/auto-fill.
+
+ORNAMENTAL DIVIDERS (USE LIBERALLY — these create the luxury feel):
+
+A. The serif rule with diamond center (use between sections):
+   <div class="ornament">
+     <span class="ornament-line"></span>
+     <svg class="ornament-diamond" width="16" height="16" viewBox="0 0 16 16" fill="none">
+       <path d="M8 1 L15 8 L8 15 L1 8 Z" stroke="#d4af37" stroke-width="1" fill="none"/>
+       <path d="M8 4 L12 8 L8 12 L4 8 Z" fill="#d4af37"/>
+     </svg>
+     <span class="ornament-line"></span>
+   </div>
+   With CSS: .ornament { display:flex; align-items:center; gap:14px; margin: 28px 0; }
+            .ornament-line { flex:1; height:1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent); }
+
+B. Double gold rule (top of cover, between cover and TOC):
+   <div class="double-rule"></div>
+   .double-rule { height: 6px; border-top: 1px solid #d4af37; border-bottom: 1px solid #d4af37; margin: 18px 0; }
+
+C. Section number cartouche (start of every chapter):
+   <div class="chapter-mark">
+     <span class="chapter-num">01</span>
+     <span class="chapter-line"></span>
+     <span class="chapter-label">EXECUTIVE SUMMARY</span>
+   </div>
+   With CSS: .chapter-mark { display:flex; align-items:center; gap:18px; margin-bottom:18px; }
+            .chapter-num { font-family:'Playfair Display',serif; font-style:italic; font-size:42px; color:#d4af37; line-height:1; }
+            .chapter-line { flex:1; height:1px; background:#d4af37; opacity:.55; }
+            .chapter-label { font-size:11px; letter-spacing:0.4em; color:#d4af37; }
+
+REQUIRED SECTIONS (each section starts with the chapter cartouche above):
+
+1. COVER — full-page editorial cover. Layout from top:
+   • Top double-gold-rule with centered monogram "I" inside a gold-bordered diamond
+   • Eyebrow: "INJAAZH · MASTER AUDIT DOSSIER"
+   • Massive cover title (Playfair, 80–96px) — 3 to 4 lines, with one key word italicized in gold (e.g. "A <em>Cinematic</em> Audit of <em>Web Performance</em>")
+   • Bottom double-gold-rule
+   • Two-column meta block: left column "PREPARED ON" + date, right column "DATA SOURCES" + count of screenshots
+   • Use {{REPORT_DATE}} placeholder — you will literally output as today's date in "Month DD, YYYY" format
+   • Bottom anchor: small italic line "Architected by Injaazh — Strategy & Engineering"
+
+2. EXECUTIVE SUMMARY — chapter cartouche "01 / EXECUTIVE SUMMARY" + h2 "Synopsis" + lead paragraph WITH DROP-CAP on first letter + then 2–3 short paragraphs + a pull-quote (italic gold) summarizing the single most important finding
+
+3. DATA SOURCES — chapter cartouche "02 / DATA SOURCES" + intro paragraph + a 2-column grid of source cards. Each source card: gold left accent stripe (3px), tool name (Playfair 22px white), one-line description, a small list of metrics extracted
+
+4. KEY METRICS GRID — chapter cartouche "03 / KEY METRICS" + a 4-column grid of metric chips. EACH chip is a vertical stack with INLINE SVG donut ring (size 88px) showing the score, then label below, then status pill below. SVG donut spec:
+   <svg width="88" height="88" viewBox="0 0 88 88">
+     <circle cx="44" cy="44" r="38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+     <circle cx="44" cy="44" r="38" fill="none" stroke="#d4af37" stroke-width="6" stroke-linecap="round"
+             stroke-dasharray="238.76" stroke-dashoffset="<calc>" transform="rotate(-90 44 44)"/>
+     <text x="44" y="50" text-anchor="middle" font-family="Playfair Display" font-weight="700" font-size="22" fill="#d4af37"><score></text>
+   </svg>
+   stroke-dashoffset = 238.76 * (1 - score/100). For non-percent metrics (LCP=3.6s), use a numeric label inside the circle and color the ring by status (green/amber/red).
+
+5. CRITICAL ISSUES — chapter cartouche "04 / CRITICAL ISSUES" + intro + a numbered list of issue cards. Each issue card:
+   • Gold left accent stripe (3px)
+   • Top row: severity pill (left) + issue number "ISSUE 01" (right, gold tracked)
+   • h3 issue title
+   • 2-line impact paragraph
+   • A small "Source" line in muted text listing which screenshot(s) detected it
+   • Recommended fix in a small inset box (background #181826, gold-left-stripe 2px)
+
+6. CROSS-TOOL INSIGHTS — chapter cartouche "05 / CROSS-TOOL INSIGHTS" + 2 to 4 insight cards in 2-col grid. Each card has a small gold SVG icon top-left (16x16), an h3 title, and 2–3 sentence body.
+
+7. OPPORTUNITIES & QUICK WINS — chapter cartouche "06 / OPPORTUNITIES" + 3-col grid of opportunity cards. Each card vertically stacked: SVG icon, h3 title, short description, "Effort: Low/Medium/High" muted line at bottom.
+
+8. 5-MONTH ROADMAP — chapter cartouche "07 / STRATEGIC ROADMAP" + a vertical timeline. Layout:
+   <div class="timeline">
+     <div class="timeline-item">
+       <div class="timeline-dot">M1</div>
+       <div class="timeline-content">
+         <h3>Foundation & Quick Wins</h3>
+         <ul>
+           <li><strong>Title:</strong> description</li>
+           ...
+         </ul>
+       </div>
+     </div>
+     ... 5 items M1–M5
+   </div>
+   CSS: .timeline { position:relative; padding-left:64px; }
+        .timeline::before { content:""; position:absolute; left:24px; top:8px; bottom:8px; width:2px; background:linear-gradient(180deg,transparent,#d4af37 12%,#d4af37 88%,transparent); }
+        .timeline-item { position:relative; margin-bottom:32px; page-break-inside:avoid; break-inside:avoid; }
+        .timeline-dot { position:absolute; left:-64px; top:-2px; width:48px; height:48px; border-radius:50%; background:#11111c; border:1.5px solid #d4af37; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-style:italic; font-weight:700; color:#d4af37; font-size:16px; }
+
+9. KPI TARGETS / CLOSING — chapter cartouche "08 / PROJECTED UPLIFT" + a real <table> showing Metric | Current | 3-Month Target | 5-Month Target | Projected Uplift. Gold header bar, alternating row backgrounds, gold cell text for uplift column.
+
+10. SIGN-OFF / FOOTER — large editorial closing. Layout:
+   • Centered ornament-line + diamond + ornament-line
+   • Centered Playfair italic 28px: "Report Architected & Prepared by Injaazh"
+   • Tiny ornament line again
+   • Tiny eyebrow centered: "STRATEGY · ENGINEERING · GROWTH"
+
+PAGE BREAK RULES (CRITICAL — no empty gaps in PDF):
+- DO NOT use page-break-before: always or break-before: page ANYWHERE.
+- DO NOT put page-break-inside: avoid on big sections, the roadmap container, the metrics grid, or the issues list.
+- ONLY apply page-break-inside: avoid (with break-inside: avoid for cross-browser) to SMALL atomic units:
+   • Each metric chip
+   • Each issue card
+   • Each opportunity card
+   • Each source card
+   • Each timeline-item (these are compact)
+   • Each <tr> table row
+   • Each <li>
+   • Each ornamental divider
+   • Headings + their cartouche wrapper
+- Headings: page-break-after: avoid + break-after: avoid
+- Eyebrows / chapter cartouches: page-break-after: avoid + break-after: avoid
+- Cover section can be one continuous block. After cover, sections flow naturally.
+
+═══════════════════════════════════════════════════════════════════
+PANEL HEADER GROUPING (CRITICAL — fixes orphaned headings)
+═══════════════════════════════════════════════════════════════════
+
+Every section MUST start with a wrapper that keeps the chapter cartouche + h2 + lead paragraph as ONE unbreakable unit:
+
+<section class="panel">
+  <div class="panel-header">
+    <div class="chapter-mark">
+      <span class="chapter-num">01</span>
+      <span class="chapter-line"></span>
+      <span class="chapter-label">EXECUTIVE SUMMARY</span>
+    </div>
+    <h2>Synopsis</h2>
+    <p class="lead">One-sentence intro that previews the section.</p>
+  </div>
+  <!-- the rest of the panel content -->
+</section>
+
+CSS: .panel-header { page-break-after: avoid; break-after: avoid; page-break-inside: avoid; break-inside: avoid; margin-bottom: 28px; }
+
+═══════════════════════════════════════════════════════════════════
+TABLES — REAL <table> MARKUP, REPEATING HEADERS
+═══════════════════════════════════════════════════════════════════
+
+<table class="kpi-table">
+  <thead><tr><th>...</th>...</tr></thead>
+  <tbody><tr><td>...</td>...</tr></tbody>
+</table>
+- table-layout: fixed; width: 100%; border-collapse: collapse;
+- thead background: linear-gradient(90deg, #d4af37, #f0d77a, #d4af37); color: #0a0a12; font-weight: 700; uppercase; letter-spacing: 0.18em; font-size: 11px;
+- th, td: padding 14px 16px; word-break: break-word;
+- tbody tr:nth-child(even) td { background: #181826; }
+- tbody tr:nth-child(odd) td { background: #11111c; }
+- Last column (uplift) text in gold #d4af37 weight 700.
 
 OUTPUT REQUIREMENTS — READ CAREFULLY:
 - Return ONLY raw HTML. No markdown, no code fences, no commentary.
-- The HTML must start with a <style> tag and be followed by the report markup.
+- Start with a <style> tag, then the report markup wrapped in <div class="injaazh-report"> ... </div>.
+- Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags.
 - Use CSS scoped via wrapper class ".injaazh-report" so it does not leak globally.
-- Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags. Output is embedded.
-- Wrap everything in <div class="injaazh-report"> ... </div>.
-
-DESIGN AT DESKTOP CLASS (1040px render width — Puppeteer scales it to A4 in PDF):
-- The render canvas is 1040px wide. Design like a desktop magazine spread, NOT a cramped A4 layout. Set:
-    .injaazh-report { max-width: 1040px; margin: 0 auto; padding: 32px 28px; }
-- Cover title font-size: 56-72px (big, cinematic, breathing room — Playfair Display 700/800).
-- Section headings (h2): 32-40px. Sub-headings (h3): 20-24px. Body: 15-16px with line-height 1.6.
-- Eyebrow labels: 11-12px, uppercase, letter-spacing 0.32em, color gold.
-- Generous padding INSIDE panels (28-40px) and breathing margin BETWEEN panels (24-32px).
-- Multi-column grids feel native at 1040px: 2-3 cols for cards, 4 cols for small metric chips.
-- Roadmap timeline: visual timeline (vertical or horizontal), rich and editorial.
-- Use whitespace boldly. Premium feel comes from breathing room, typography hierarchy, and color contrast.
-
-REQUIRED SECTIONS (in this order, each as a flat panel with solid bg + 1px border):
-  1. Cover / Executive Summary — brand line "INJAAZH · MASTER AUDIT", report title, date (use {{REPORT_DATE}} placeholder you will literally output as today's date in "Month DD, YYYY" format), number of data sources analyzed, and a 2–3 sentence executive synopsis.
-  2. Data Sources — list of tools/screenshots analyzed with brief description of what each provided.
-  3. Key Metrics Grid — 4 to 8 metric cards with score chips or bold gold numerals. Show data from multiple sources.
-  4. Critical Issues — ranked list with severity tag, issue, impact, data source(s), and recommended fix.
-  5. Cross-Tool Insights — patterns, correlations, and validated findings across data sources.
-  6. Opportunities & Quick Wins — 3 to 7 cards with actionable recommendations.
-  7. 5-Month Strategic Roadmap — visual timeline with Month 1 → Month 5, each containing 2–4 milestones.
-  8. Closing / KPI Targets — projected uplift table.
-  9. Footer — must contain EXACTLY this line, prominently styled in gold:
-        Report Architected & Prepared by Injaazh
-
-PAGE BREAK HINTS (CRITICAL — keep PDF flowing without empty gaps):
-- DO NOT use  page-break-before: always  or  break-before: page  ANYWHERE. Sections must flow naturally one after another with NO forced page breaks. Forcing breaks creates large empty gaps in the PDF.
-- DO NOT put  page-break-inside: avoid  on large containers (sections, big cards, the roadmap container). It pushes huge blocks to the next page leaving empty space. Let large containers break naturally across pages.
-- ONLY apply  page-break-inside: avoid  to SMALL atomic units that look bad when split:
-    • Individual table rows
-    • Single list items
-    • A small metric chip with its label
-    • A single roadmap month card (only if it's compact, ~3-4 lines)
-    • Heading + its first paragraph (use heading + paragraph wrapper)
-- Headings should have  page-break-after: avoid  so they don't get orphaned at the bottom of a page.
-- The whole report should read like a continuous magazine layout, not a slideshow with one section per page.
-
-═══════════════════════════════════════════════════════════════════
-RESPONSIVE PAGE-FLOW RULES (CRITICAL — fixes empty gaps, orphans, splits)
-═══════════════════════════════════════════════════════════════════
-
-1. PANEL HEADER GROUPING
-Every major panel/section MUST start with a wrapper that keeps the eyebrow + heading + intro paragraph together as ONE unbreakable unit. Otherwise the eyebrow gets stuck at the bottom of a page while the heading + content jumps to the next page (leaves a half-empty page).
-
-Use this pattern for EVERY section:
-  <section class="panel">
-    <div class="panel-header">
-      <p class="eyebrow">URGENT ATTENTION REQUIRED</p>
-      <h2>Critical Issues</h2>
-      <p class="intro">Short 1-2 sentence intro...</p>
-    </div>
-    <!-- the rest of the panel content goes after the panel-header -->
-  </section>
-
-2. METRIC CARDS — STACKED VERTICAL LAYOUT (no horizontal cramming)
-Each metric card MUST use a simple vertical stack (display:flex; flex-direction:column). NEVER put the score + unit + status-label side-by-side in a row that can wrap awkwardly. Layout from top to bottom inside each card:
-  • Tiny label (12-13px, muted): "Largest Contentful Paint (Desktop)"
-  • Big numeric score on its own line (32-44px, bold gold): "3.6s"
-  • Status pill on its own line below ("Needs improvement", "Poor", "Good")
-  • All three vertically stacked with margin between, never inline.
-
-3. CARD GRIDS — ROW-AWARE
-For metric grids, opportunity grids, etc., do NOT use auto-fit/auto-fill that creates uneven last-row counts. Use fixed grid-template-columns (e.g. repeat(2, 1fr) or repeat(3, 1fr)) so the rows are predictable. Each card in the grid must have:
-  style="break-inside: avoid; page-break-inside: avoid;"
-Do NOT put break-inside on the grid container itself — only on each card.
-
-4. ROADMAP ITEMS — FULL WIDTH, VERTICAL FLOW
-Each month card in the 5-month roadmap should be FULL WIDTH (not split into a label+value 2-column layout). Inside each month:
-  • Month badge + month title in one row at top (e.g. "M1 · Foundation & Quick Wins")
-  • Below: a simple <ul> with bullet points for milestones
-  • Each milestone bullet is a single line: "<strong>Title:</strong> short description"
-  • Do NOT use a 2-column grid where the label is left and description is right — when the description wraps, the next item starts on a new column row creating gaps.
-- Wrap each whole month card with style="break-inside: avoid; page-break-inside: avoid;"
-
-5. TABLES — RESPONSIVE & PAGE-AWARE
-Use proper <thead> and <tbody>:
-  <table>
-    <thead>
-      <tr><th>Metric</th><th>Current</th><th>Target</th><th>Uplift</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>...</td>...</tr>
-    </tbody>
-  </table>
-- Apply  width: 100%; table-layout: fixed; border-collapse: collapse;  on the table.
-- Cell padding: 12-14px. Font: 13px. Use word-break: break-word; on cells so long values wrap inside the cell instead of overflowing.
-- Do NOT manually create grid-based "tables" with divs — use real <table> markup. The browser handles repeating headers and row breaking properly only on real tables.
-
-CONSTRAINTS:
-- No external images, fonts (the host document loads Playfair + Outfit), scripts, or stylesheets.
-- Aim for ~1000–1600 lines of polished, production-quality FLAT HTML+CSS. Visual richness comes from typography, color, and layout — NOT from effects.
+- Aim for ~1400–2000 lines of polished, production-quality FLAT HTML+CSS. Visual richness comes from typography, ornament, and layout — NOT from effects.
 - Every panel must look premium WITHOUT any blur or shadow effects.
 `.trim();
 
@@ -417,13 +487,13 @@ function buildDocument(fragment: string): string {
 <title>Injaazh — Master Audit Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,700;1,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
-    background: #070709;
+    background: #07070b;
     color: #ececf2;
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -432,7 +502,7 @@ function buildDocument(fragment: string): string {
   }
   body {
     /* Solid background only — no gradients to keep PDF lightweight */
-    background: #070709;
+    background: #07070b;
     min-height: 100vh;
     padding: 24px;
   }
@@ -451,27 +521,390 @@ function buildDocument(fragment: string): string {
     max-width: 1040px;
     margin: 0 auto;
     color: #ececf2;
+    padding: 32px 36px;
   }
   .injaazh-report h1, .injaazh-report h2, .injaazh-report h3, .injaazh-report h4 {
     font-family: 'Playfair Display', Georgia, "Times New Roman", serif;
     color: #fff;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     margin: 0 0 0.4em;
+    font-weight: 700;
   }
+  .injaazh-report h1 { font-size: 84px; line-height: 1.02; }
+  .injaazh-report h2 { font-size: 44px; line-height: 1.08; }
+  .injaazh-report h3 { font-size: 22px; line-height: 1.25; }
+  .injaazh-report p { margin: 0 0 14px; color: #c8c8d2; }
   .injaazh-report a { color: #d4af37; text-decoration: none; }
+  .injaazh-report em, .injaazh-report i { font-style: italic; color: #f0d77a; }
+  .injaazh-report strong { color: #ececf2; font-weight: 600; }
   .injaazh-report code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: #131320;
+    background: #181826;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px;
     padding: 2px 6px;
+    font-size: 0.9em;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     EDITORIAL FALLBACK STYLES
+     These run regardless of what the AI emits, so the report stays
+     beautiful even if the model omits some classes. The AI is also
+     instructed to use these exact class names.
+     ───────────────────────────────────────────────────────────── */
+
+  /* Eyebrow / chapter cartouche */
+  .injaazh-report .eyebrow {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.36em;
+    text-transform: uppercase;
+    color: #d4af37;
+    margin: 0 0 14px;
+  }
+  .injaazh-report .chapter-mark {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0 0 18px;
+  }
+  .injaazh-report .chapter-num {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 42px;
+    color: #d4af37;
+    line-height: 1;
+  }
+  .injaazh-report .chapter-line {
+    flex: 1;
+    height: 1px;
+    background: #d4af37;
+    opacity: 0.55;
+  }
+  .injaazh-report .chapter-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: #d4af37;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Ornamental dividers */
+  .injaazh-report .ornament {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 36px 0;
+  }
+  .injaazh-report .ornament-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
+  }
+  .injaazh-report .double-rule {
+    height: 6px;
+    border-top: 1px solid #d4af37;
+    border-bottom: 1px solid #d4af37;
+    margin: 22px 0;
+  }
+
+  /* Panels and panel-header grouping */
+  .injaazh-report .panel {
+    background: #11111c;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 44px 40px;
+    margin: 36px 0;
+  }
+  .injaazh-report .panel-header {
+    margin-bottom: 28px;
+  }
+  .injaazh-report .panel-header h2 {
+    margin-top: 6px;
+  }
+  .injaazh-report .lead {
+    font-size: 19px;
+    line-height: 1.6;
+    color: #e6e6ec;
+    margin-top: 8px;
+  }
+
+  /* Cover */
+  .injaazh-report .cover {
+    padding: 56px 44px 48px;
+    background: #11111c;
+    border: 1px solid rgba(212,175,55,0.18);
+    border-radius: 16px;
+    margin-bottom: 40px;
+  }
+  .injaazh-report .cover-monogram {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .injaazh-report .cover h1 {
+    font-size: 84px;
+    line-height: 1.02;
+    margin: 28px 0 28px;
+    letter-spacing: -0.025em;
+  }
+  .injaazh-report .cover-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding-top: 22px;
+  }
+  .injaazh-report .cover-meta-item .meta-label {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: #9a9aa6;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .injaazh-report .cover-meta-item .meta-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: #f0d77a;
+    font-weight: 500;
+  }
+
+  /* Pull-quote */
+  .injaazh-report .pullquote,
+  .injaazh-report blockquote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1.3;
+    color: #f0d77a;
+    margin: 32px 0;
+    padding: 4px 0 4px 24px;
+    border-left: 3px solid #d4af37;
+  }
+
+  /* Drop-cap */
+  .injaazh-report .dropcap::first-letter,
+  .injaazh-report p.dropcap::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 76px;
+    line-height: 0.85;
+    color: #d4af37;
+    float: left;
+    margin: 6px 12px 0 0;
+  }
+
+  /* Severity pill */
+  .injaazh-report .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-family: 'Outfit', sans-serif;
+  }
+  .injaazh-report .pill-critical { background: #ef4444; color: #fff; }
+  .injaazh-report .pill-high { background: #f59e0b; color: #1a0f00; }
+  .injaazh-report .pill-medium { background: #eab308; color: #1a0f00; }
+  .injaazh-report .pill-low { background: #06b6d4; color: #04141a; }
+  .injaazh-report .pill-good { background: #34d399; color: #04140d; }
+
+  /* Cards (with optional gold left stripe) */
+  .injaazh-report .card {
+    background: #181826;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 26px 24px;
+  }
+  .injaazh-report .card-gold {
+    border-left: 3px solid #d4af37;
+  }
+
+  /* Issue card */
+  .injaazh-report .issue-card {
+    background: #181826;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid #d4af37;
+    border-radius: 12px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+  }
+  .injaazh-report .issue-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .injaazh-report .issue-num {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.36em;
+    color: #d4af37;
+    text-transform: uppercase;
+  }
+  .injaazh-report .issue-source {
+    font-size: 12px;
+    color: #9a9aa6;
+    margin-top: 8px;
+  }
+  .injaazh-report .issue-fix {
+    background: #11111c;
+    border-left: 2px solid #d4af37;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    font-size: 14px;
+    color: #d8d8de;
+  }
+  .injaazh-report .issue-fix .fix-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    color: #d4af37;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Metric chip */
+  .injaazh-report .metric-chip {
+    background: #181826;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+  .injaazh-report .metric-chip .metric-label {
+    font-size: 12px;
+    color: #9a9aa6;
+    line-height: 1.35;
+  }
+  .injaazh-report .metric-chip .metric-value {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 38px;
+    color: #d4af37;
+    line-height: 1;
+  }
+
+  /* Grid helpers */
+  .injaazh-report .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .injaazh-report .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .injaazh-report .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+  /* Timeline */
+  .injaazh-report .timeline {
+    position: relative;
+    padding-left: 64px;
+    margin-top: 8px;
+  }
+  .injaazh-report .timeline::before {
+    content: "";
+    position: absolute;
+    left: 24px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, #d4af37 12%, #d4af37 88%, transparent);
+  }
+  .injaazh-report .timeline-item {
+    position: relative;
+    margin-bottom: 28px;
+    padding: 24px 26px;
+    background: #181826;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid #d4af37;
+    border-radius: 12px;
+  }
+  .injaazh-report .timeline-dot {
+    position: absolute;
+    left: -64px;
+    top: -2px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #11111c;
+    border: 1.5px solid #d4af37;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    color: #d4af37;
+    font-size: 16px;
+  }
+  .injaazh-report .timeline-item ul {
+    margin: 12px 0 0;
+    padding-left: 18px;
+  }
+  .injaazh-report .timeline-item li {
+    margin-bottom: 6px;
+    color: #c8c8d2;
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+
+  /* KPI table */
+  .injaazh-report .kpi-table,
+  .injaazh-report table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 18px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .injaazh-report thead th {
+    background: linear-gradient(90deg, #d4af37, #f0d77a, #d4af37);
+    color: #0a0a12;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 14px 16px;
+    text-align: left;
+  }
+  .injaazh-report tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #d8d8de;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    word-break: break-word;
+  }
+  .injaazh-report tbody tr:nth-child(even) td { background: #181826; }
+  .injaazh-report tbody tr:nth-child(odd) td { background: #11111c; }
+  .injaazh-report tbody td:last-child { color: #d4af37; font-weight: 700; }
+
+  /* Sign-off */
+  .injaazh-report .signoff {
+    text-align: center;
+    margin: 56px 0 24px;
+  }
+  .injaazh-report .signoff-line {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: #f0d77a;
+    margin: 18px 0;
   }
 
   /* Page setup for PDF */
   @page {
     size: A4;
     margin: 12mm 10mm;
-    background: #070709;
+    background: #07070b;
   }
 
   /*
@@ -491,10 +924,12 @@ function buildDocument(fragment: string): string {
   @media print {
     body {
       padding: 0;
+      background: #07070b;
     }
     .injaazh-report {
       max-width: 100%;
       margin: 0;
+      padding: 0;
     }
     /* Headings: don't get orphaned at the very bottom of a page */
     .injaazh-report h1,
@@ -504,11 +939,11 @@ function buildDocument(fragment: string): string {
       page-break-after: avoid;
       break-after: avoid;
     }
-    /* Eyebrow labels (uppercase tracking) must stick with the heading
-       that follows — otherwise eyebrow lands at page bottom and the
-       heading + content jumps to the next page leaving an empty gap. */
+    /* Eyebrow, chapter cartouche & panel-header: stick with following content */
     .injaazh-report .eyebrow,
     .injaazh-report [class*="eyebrow"],
+    .injaazh-report .chapter-mark,
+    .injaazh-report [class*="chapter-mark"],
     .injaazh-report .panel-header,
     .injaazh-report [class*="panel-header"] {
       page-break-after: avoid;
@@ -516,7 +951,15 @@ function buildDocument(fragment: string): string {
       page-break-inside: avoid;
       break-inside: avoid;
     }
-    /* Small atomic units: don't split mid-element */
+    /* Atomic editorial units: don't split mid-element */
+    .injaazh-report .metric-chip,
+    .injaazh-report .issue-card,
+    .injaazh-report .card,
+    .injaazh-report .timeline-item,
+    .injaazh-report .pullquote,
+    .injaazh-report blockquote,
+    .injaazh-report .ornament,
+    .injaazh-report .double-rule,
     .injaazh-report tr,
     .injaazh-report li,
     .injaazh-report figure,
@@ -525,8 +968,12 @@ function buildDocument(fragment: string): string {
       page-break-inside: avoid;
       break-inside: avoid;
     }
-    /* Repeat table headers on every printed page so split tables stay
-       readable across page breaks */
+    /* Cover should stay together if it fits */
+    .injaazh-report .cover {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    /* Repeat table headers on every printed page */
     .injaazh-report thead {
       display: table-header-group;
     }
@@ -544,8 +991,7 @@ function buildDocument(fragment: string): string {
       word-break: break-word;
       overflow-wrap: anywhere;
     }
-    /* Orphans / widows: avoid leaving 1 line of a paragraph alone at top
-       or bottom of a page */
+    /* Orphans / widows */
     .injaazh-report p,
     .injaazh-report li {
       orphans: 3;
